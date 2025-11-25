@@ -42,7 +42,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Deploy to Render
-        # Only run this step if you have set RENDER_DEPLOY_HOOK_URL in GitHub Secrets
-        if: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
         run: |
           curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
