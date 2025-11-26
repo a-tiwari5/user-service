@@ -41,26 +41,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Render Deployment
-        id: deploy
         env:
           DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
         run: |
           echo "🚀 Triggering deployment to Render..."
           if [ -z "$DEPLOY_HOOK_URL" ]; then
             echo "❌ Error: RENDER_DEPLOY_HOOK_URL secret is not set!"
-            echo "Please add it in GitHub Settings -> Secrets and variables -> Actions"
+            echo "Available secrets are not shown for security reasons."
+            echo "Please verify the secret name is exactly: RENDER_DEPLOY_HOOK_URL"
             exit 1
           fi
-          response=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$DEPLOY_HOOK_URL")
-          echo "Response code: $response"
-          if [ $response -eq 200 ] || [ $response -eq 201 ]; then
-            echo "✅ Deployment triggered successfully!"
-            echo "deployment_status=success" >> $GITHUB_OUTPUT
-          else
-            echo "❌ Deployment trigger failed with status: $response"
-            echo "deployment_status=failed" >> $GITHUB_OUTPUT
-            exit 1
-          fi
+          echo "Calling Render deploy hook..."
+          curl -X POST "$DEPLOY_HOOK_URL"
+          echo ""
+          echo "✅ Deployment triggered successfully!"
       
       - name: Deployment Summary
         if: always()
