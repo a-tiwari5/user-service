@@ -34,13 +34,34 @@ jobs:
         # Mock DB URL for tests if needed, though our tests mock the DB calls
         MONGODB_URL: mongodb://localhost:27017/test-db 
 
-  # Optional: Trigger deployment only if tests pass
-  # This requires a Deploy Hook URL from Render
+  # Trigger deployment only if tests pass
   deploy:
     needs: test
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/master'  # Changed from 'main' to 'master'
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy to Render
+      - name: Trigger Render Deployment
+        id: deploy
         run: |
-          curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+          echo "🚀 Triggering deployment to Render..."
+          response=$(curl -s -o /dev/null -w "%{http_code}" -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL }})
+          echo "Response code: $response"
+          if [ $response -eq 200 ] || [ $response -eq 201 ]; then
+            echo "✅ Deployment triggered successfully!"
+            echo "deployment_status=success" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Deployment trigger failed with status: $response"
+            echo "deployment_status=failed" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+      
+      - name: Deployment Summary
+        if: always()
+        run: |
+          echo "### 🚀 Deployment Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Service**: user-service" >> $GITHUB_STEP_SUMMARY
+          echo "- **Platform**: Render" >> $GITHUB_STEP_SUMMARY
+          echo "- **Triggered at**: $(date)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Check deployment progress at: https://dashboard.render.com" >> $GITHUB_STEP_SUMMARY
